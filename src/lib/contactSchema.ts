@@ -12,7 +12,9 @@ export const contactSchema = z
       .regex(/^[\d\s()+-]{7,20}$/, 'Enter a valid phone number.'),
     email: z.string().trim().email('Enter a valid email address.').max(200),
     city: z.string().trim().min(2, 'Please enter your city.').max(100),
-    service: z.string().min(1, 'Please select a service.'),
+    // The message is attached to the type check as well as `.min(1)`: a radio
+    // group with nothing selected yields null, which never reaches `.min()`.
+    service: z.string({ message: 'Please select a service.' }).min(1, 'Please select a service.'),
     otherService: z.string().trim().max(80, 'Keep it under 80 characters.').optional(),
     message: z.string().trim().min(10, 'Tell us a bit more about the issue (10+ characters).').max(2000),
     // Honeypot: real visitors never see or fill this field (hidden via CSS).
@@ -65,7 +67,11 @@ export const leadApiSchema = z.object({
   topicsDiscussed: z.string().trim().max(500).optional().or(z.literal('')),
   transcript: z.string().trim().max(6000).optional().or(z.literal('')),
   // Honeypot, must always arrive empty.
-  company: z.string().max(0).optional().default('')
+  company: z.string().max(0).optional().default(''),
+  // Cloudflare Turnstile token, verified server-side in api/lead.ts. Not
+  // required at the schema level (verifyTurnstile handles the missing/empty
+  // case) so the honeypot and shape checks above still run first.
+  turnstileToken: z.string().optional()
 });
 
 export type LeadApiPayload = z.infer<typeof leadApiSchema>;

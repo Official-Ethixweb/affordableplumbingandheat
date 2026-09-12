@@ -4,7 +4,11 @@ import { Tag, X, Phone, Printer, ArrowRight, Sparkles } from 'lucide-react';
 import { coupons } from '../../data/coupons';
 import { business } from '../../data/business';
 
-const STORAGE_KEY = 'aph-coupon-widget-open';
+/* The open state used to be mirrored into sessionStorage and restored on
+   mount, which meant one tap on "Coupons" re-opened the panel over the hero
+   of every page the visitor browsed to afterwards - and below 1024px the
+   rail tab that closes it isn't rendered. The panel now opens only when the
+   visitor asks for it on the page they're on. */
 const EASE = [0.16, 1, 0.3, 1] as const;
 
 function printCoupon(coupon: (typeof coupons)[number]) {
@@ -44,16 +48,9 @@ function printCoupon(coupon: (typeof coupons)[number]) {
 
 export default function CouponWidget() {
   const [open, setOpen] = useState(false);
-  const hydrated = useRef(false);
   const tabRef = useRef<HTMLButtonElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
   const headingRef = useRef<HTMLHeadingElement>(null);
-
-  useEffect(() => {
-    const stored = sessionStorage.getItem(STORAGE_KEY);
-    if (stored === '1') setOpen(true);
-    hydrated.current = true;
-  }, []);
 
   useEffect(() => {
     const onOpenRequest = () => setOpen(true);
@@ -62,8 +59,6 @@ export default function CouponWidget() {
   }, []);
 
   useEffect(() => {
-    if (!hydrated.current) return;
-    sessionStorage.setItem(STORAGE_KEY, open ? '1' : '0');
     if (open) headingRef.current?.focus();
   }, [open]);
 
@@ -132,6 +127,7 @@ export default function CouponWidget() {
             ref={panelRef}
             id="coupon-panel"
             role="dialog"
+            aria-modal="true"
             aria-label="Current coupons and offers"
             initial={{ opacity: 0, scale: 0.96 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -140,17 +136,35 @@ export default function CouponWidget() {
             className="border-ink-100 fixed inset-x-3 top-16 bottom-16 z-[60] flex max-h-[600px] flex-col overflow-hidden rounded-3xl border bg-white shadow-2xl shadow-black/15 lg:inset-x-auto lg:top-1/2 lg:bottom-auto lg:left-12 lg:h-[min(600px,calc(100dvh-160px))] lg:max-h-none lg:w-[calc(100vw-3rem)] lg:max-w-[400px] lg:-translate-y-1/2"
           >
             <div className="border-ink-100 shrink-0 border-b bg-gradient-to-br from-orange-50 to-transparent px-6 py-5">
-              <p className="font-display flex items-center gap-2 text-xs font-bold tracking-wider text-orange-600 uppercase">
-                <Sparkles className="size-3.5" aria-hidden="true" />
-                Current Offers
-              </p>
-              <h2
-                ref={headingRef}
-                tabIndex={-1}
-                className="font-display text-ink-900 mt-1.5 text-xl font-bold text-balance outline-none"
-              >
-                {coupons.length} Ways to Save
-              </h2>
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="font-display flex items-center gap-2 text-xs font-bold tracking-wider text-orange-600 uppercase">
+                    <Sparkles className="size-3.5" aria-hidden="true" />
+                    Current Offers
+                  </p>
+                  <h2
+                    ref={headingRef}
+                    tabIndex={-1}
+                    className="font-display text-ink-900 mt-1.5 text-xl font-bold text-balance outline-none"
+                  >
+                    {coupons.length} Ways to Save
+                  </h2>
+                </div>
+                {/* The rail tab doubles as the close control, but it is
+                    `lg:flex` only - below 1024px it never renders, which left
+                    the panel with no visible way out but a backdrop tap. */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setOpen(false);
+                    tabRef.current?.focus();
+                  }}
+                  aria-label="Close coupons"
+                  className="text-ink-500 hover:bg-ink-100 hover:text-ink-900 -mt-1 -mr-2 inline-flex size-11 shrink-0 items-center justify-center rounded-full transition-colors"
+                >
+                  <X className="size-5" aria-hidden="true" />
+                </button>
+              </div>
             </div>
 
             <div className="flex-1 space-y-3 overflow-y-auto px-4 py-4">
@@ -176,7 +190,7 @@ export default function CouponWidget() {
                       type="button"
                       onClick={() => printCoupon(coupon)}
                       aria-label={`Print ${coupon.title} coupon`}
-                      className="text-ink-500 hover:bg-ink-100 hover:text-ink-900 inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-semibold transition-colors"
+                      className="text-ink-500 hover:bg-ink-100 hover:text-ink-900 inline-flex min-h-11 items-center gap-1 rounded-full px-3 py-1 text-[11px] font-semibold transition-colors"
                     >
                       <Printer className="size-3.5" aria-hidden="true" />
                       Print

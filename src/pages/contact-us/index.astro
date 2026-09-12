@@ -38,7 +38,7 @@ const breadcrumbSchema = buildBreadcrumbSchema([
             </span>
             Emergency? Skip the form.
           </p>
-          <a href={`tel:${business.hotline.tel}`} class="font-display text-ink-900 mt-3 flex items-center gap-3 text-3xl font-bold hover:text-orange-600">
+          <a href={`tel:${business.hotline.tel}`} class="font-display text-ink-900 mt-3 flex min-h-11 items-center gap-3 text-3xl font-bold hover:text-orange-600">
             <Phone className="size-7 text-orange-600" aria-hidden="true" />
             {business.hotline.display}
           </a>

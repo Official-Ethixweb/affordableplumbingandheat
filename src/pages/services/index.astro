@@ -60,7 +60,7 @@ const breadcrumbSchema = buildBreadcrumbSchema([
                 return (
                   <article
                     data-reveal
-                    class="group hover:shadow-card-hover border-ink-100 shadow-card flex flex-col overflow-hidden rounded-3xl border bg-white transition-all duration-300 hover:-translate-y-1 hover:border-orange-300/60"
+                    class="group hover:shadow-card-hover border-ink-100 shadow-card relative flex flex-col overflow-hidden rounded-3xl border bg-white transition-all duration-300 hover:-translate-y-1 hover:border-orange-300/60"
                   >
                     {s.image ? (
                       <div class="relative h-[180px] overflow-hidden">
@@ -78,8 +78,23 @@ const breadcrumbSchema = buildBreadcrumbSchema([
                         <IconBadge icon={Icon} tone="white" size="sm" class="absolute bottom-3 left-4" />
                       </div>
                     ) : (
-                      <div class="bg-navy-900 flex h-[100px] items-center px-6">
-                        <ServiceIcon icon={Icon} svg={customIcon} tone="white" size="sm" />
+                      /* Was h-[100px] against the photo branch's h-[180px], so
+                         a row mixing the two sat at two different heights and
+                         the grid looked ragged. Same height and the same
+                         gradient/watermark treatment as the hero fallback. */
+                      <div class="from-navy-800 to-navy-950 relative flex h-[180px] items-center overflow-hidden bg-gradient-to-br px-6">
+                        <div
+                          class="pointer-events-none absolute -top-8 -left-8 size-40 rounded-full bg-orange-500/20 blur-2xl"
+                          aria-hidden="true"
+                        />
+                        <Icon
+                          className="pointer-events-none absolute -right-4 -bottom-6 size-36 text-white/[0.06]"
+                          aria-hidden="true"
+                          strokeWidth={1}
+                        />
+                        <div class="relative">
+                          <ServiceIcon icon={Icon} svg={customIcon} tone="white" size="sm" />
+                        </div>
                       </div>
                     )}
                     <div class="flex flex-1 flex-col p-6">
@@ -93,9 +108,13 @@ const breadcrumbSchema = buildBreadcrumbSchema([
                           </li>
                         ))}
                       </ul>
+                      {/* `before:absolute before:inset-0` turns the whole
+                          card into the hit area. Only the 20px-tall "Learn
+                          More" text was clickable before, which is an awkward
+                          target on a phone for a card this size. */}
                       <a
                         href={`/services/${s.slug}/`}
-                        class="font-display mt-4 inline-flex items-center gap-1.5 text-sm font-bold text-orange-600 transition-colors hover:text-orange-700"
+                        class="font-display mt-4 inline-flex items-center gap-1.5 text-sm font-bold text-orange-600 transition-colors before:absolute before:inset-0 before:content-[''] hover:text-orange-700"
                       >
                         Learn More<span class="sr-only"> about {s.title}</span>{' '}
                         <ArrowRight className="size-4" aria-hidden="true" />

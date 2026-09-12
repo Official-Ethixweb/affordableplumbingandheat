@@ -75,6 +75,15 @@ function hrefFor(slug: string) {
   return pagedSlugs.has(slug) ? `/service-area/${slug}/` : '';
 }
 
+/** Destination for the text lists beside/below the map. A community with its
+ * own hub page goes there; the primary market has no `[slug]` page of its own
+ * so it points at the service-area overview (the same target its map marker
+ * uses); anything else falls back to the enquiry form. */
+function listHrefFor(area: { slug: string; type?: string }) {
+  if (pagedSlugs.has(area.slug)) return `/service-area/${area.slug}/`;
+  return area.type === 'primary' ? '/service-area/' : '/contact-us/';
+}
+
 /** Hypsometric tint ramp: low plains → high peaks. Sampled to feel like a
  * printed relief map rather than a heatmap — greens through tans to a pale
  * rock grey, matching the reference artwork's palette. Index-matched to
@@ -384,7 +393,11 @@ function labelFor(slug: string) {
         <p class="map-tooltip-city"></p>
         <p class="map-tooltip-business">{business.name}</p>
         <p class="map-tooltip-status">Service available in this area.</p>
-        <a class="map-tooltip-cta map-tooltip-cta--view" href="#">
+        <!-- Real default rather than "#": showTooltip() swaps in the marker's
+             own href before the tooltip is ever shown, but a literal "#" in
+             the static markup reads as a dead link to crawlers and link
+             checkers. /service-area/ is the correct fallback destination. -->
+        <a class="map-tooltip-cta map-tooltip-cta--view" href="/service-area/">
           View Area
           <MapPin className="size-3.5" aria-hidden="true" />
         </a>
@@ -393,6 +406,24 @@ function labelFor(slug: string) {
           <MapPin className="size-3.5" aria-hidden="true" />
         </a>
       </div>
+
+      {
+        /* The homepage map has no side panel, so on a phone the only route
+           into a community was a marker roughly 6px across. These chips are
+           the same destinations as real 44px-tall links; they drop away at lg
+           where the markers are big enough to aim at. */
+        isCompact && (
+          <ul class="community-chips lg:hidden" aria-label="Communities we serve">
+            {serviceAreas.map((area) => (
+              <li>
+                <a href={listHrefFor(area)} class="community-chip">
+                  {area.name}
+                </a>
+              </li>
+            ))}
+          </ul>
+        )
+      }
 
       {
         isCompact && (
@@ -418,11 +449,17 @@ function labelFor(slug: string) {
           <ul class="communities-panel-list">
             {serviceAreas.map((area) => (
               <li>
-                <MapPin className="communities-panel-pin" aria-hidden="true" />
-                <div>
-                  <p class="communities-panel-name">{area.name}</p>
-                  <p class="communities-panel-blurb">{area.blurb}</p>
-                </div>
+                {/* These were inert <li>s, which made the SVG pins the only
+                    way to reach a community - and at 375px those pins render
+                    ~6px across with 3px between the closest pair, far below a
+                    finger's reach. The list is now the touch path. */}
+                <a href={listHrefFor(area)} class="communities-panel-link">
+                  <MapPin className="communities-panel-pin" aria-hidden="true" />
+                  <span>
+                    <span class="communities-panel-name">{area.name}</span>
+                    <span class="communities-panel-blurb">{area.blurb}</span>
+                  </span>
+                </a>
               </li>
             ))}
           </ul>
@@ -915,6 +952,43 @@ function labelFor(slug: string) {
     display: inline-flex;
   }
 
+  /* ---- Compact-variant community chips (touch path below lg) ---- */
+  .community-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 1rem;
+  }
+
+  .community-chip {
+    display: inline-flex;
+    align-items: center;
+    /* 44px floor - these replace marker taps on touch screens. */
+    min-height: 2.75rem;
+    padding: 0 0.85rem;
+    border: 1px solid var(--color-ink-200);
+    border-radius: 9999px;
+    background: white;
+    font-family: var(--font-display);
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--color-ink-700);
+    text-decoration: none;
+    transition:
+      border-color 0.15s ease,
+      color 0.15s ease;
+  }
+
+  .community-chip:hover {
+    border-color: var(--color-orange-400);
+    color: var(--color-orange-600);
+  }
+
+  .community-chip:focus-visible {
+    outline: 2px solid var(--color-orange-500);
+    outline-offset: 2px;
+  }
+
   /* ---- Communities side panel ---- */
   .communities-panel {
     display: flex;
@@ -947,11 +1021,31 @@ function labelFor(slug: string) {
   }
 
   .communities-panel-list li {
+    border-bottom: 1px solid var(--color-ink-100);
+  }
+
+  .communities-panel-link {
     display: flex;
     gap: 0.6rem;
     align-items: flex-start;
+    /* 44px floor: this list is the touch path to each community. */
+    min-height: 2.75rem;
     padding: 0.7rem 1.1rem;
-    border-bottom: 1px solid var(--color-ink-100);
+    text-decoration: none;
+    transition: background-color 0.15s ease;
+  }
+
+  .communities-panel-link:hover {
+    background: var(--color-mist-100, #f6f7f9);
+  }
+
+  .communities-panel-link:focus-visible {
+    outline: 2px solid var(--color-orange-500);
+    outline-offset: -2px;
+  }
+
+  .communities-panel-link:hover .communities-panel-name {
+    color: var(--color-orange-600);
   }
 
   .communities-panel-list li:last-child {
@@ -967,6 +1061,7 @@ function labelFor(slug: string) {
   }
 
   .communities-panel-name {
+    display: block;
     font-family: var(--font-display);
     font-size: 0.85rem;
     font-weight: 700;
@@ -974,6 +1069,7 @@ function labelFor(slug: string) {
   }
 
   .communities-panel-blurb {
+    display: block;
     font-size: 0.75rem;
     line-height: 1.4;
     color: var(--color-ink-500);
@@ -1063,12 +1159,26 @@ function labelFor(slug: string) {
       }, delay);
     }
 
+    // Touch has no hover, so a tap used to navigate instantly with no preview
+    // of where it was going. The first tap on a marker now reveals its tooltip
+    // (same content a mouse gets); a second tap on the same marker follows the
+    // link. A pointer that reports hover keeps the original one-click
+    // behaviour. `armedMarker` is what distinguishes the two taps.
+    let armedMarker: SVGGElement | null = null;
+    const hasHover = window.matchMedia('(hover: hover)').matches;
+
     markers.forEach((marker) => {
       marker.addEventListener('mouseenter', () => showTooltip(marker));
       marker.addEventListener('mouseleave', () => hideTooltip());
       marker.addEventListener('focus', () => showTooltip(marker));
       marker.addEventListener('blur', () => hideTooltip(0));
-      marker.addEventListener('click', () => {
+      marker.addEventListener('click', (e) => {
+        if (!hasHover && armedMarker !== marker) {
+          e.preventDefault();
+          armedMarker = marker;
+          showTooltip(marker);
+          return;
+        }
         const href = marker.dataset.href;
         if (href) window.location.href = href;
         else window.location.href = '/contact-us/';
@@ -1084,6 +1194,15 @@ function labelFor(slug: string) {
 
     tooltip.addEventListener('mouseenter', () => window.clearTimeout(hideTimeout));
     tooltip.addEventListener('mouseleave', () => hideTooltip());
+
+    if (!hasHover) {
+      document.addEventListener('click', (e) => {
+        const target = e.target as Element | null;
+        if (target?.closest('[data-marker]') || target?.closest('.map-tooltip')) return;
+        armedMarker = null;
+        hideTooltip(0);
+      });
+    }
   }
 
   function initAllServiceAreaMaps() {

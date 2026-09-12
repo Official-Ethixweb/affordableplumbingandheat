@@ -1,0 +1,52 @@
+---
+/**
+ * Visible breadcrumb trail. Extracted out of PageHero.astro so the pages that
+ * build their own centred hero (Coupons, Careers) can show the same trail —
+ * both emitted breadcrumb *schema* for search engines while showing the
+ * visitor nothing, which made them the only inner pages with no way back up.
+ *
+ * Crumb links carry a 44px min-height for touch; `-my-2` keeps that taller hit
+ * area from pushing the heading below it down the page.
+ */
+import { ChevronRight } from 'lucide-react';
+
+export interface Crumb {
+  label: string;
+  href?: string;
+}
+
+interface Props {
+  crumbs: Crumb[];
+  /** Centre the trail — for the centred hero layouts. */
+  center?: boolean;
+  class?: string;
+}
+
+const { crumbs, center = false, class: className = '' } = Astro.props;
+---
+
+<nav aria-label="Breadcrumb" class={className}>
+  <ol
+    class:list={[
+      'text-ink-500 -my-2 flex flex-wrap items-center gap-x-1.5 text-xs font-medium',
+      center && 'justify-center'
+    ]}
+  >
+    {
+      crumbs.map((c, i) => (
+        <li class="flex items-center gap-1.5">
+          {i > 0 && <ChevronRight className="size-3.5 text-ink-300" aria-hidden="true" />}
+          {c.href ? (
+            <a href={c.href} class="inline-flex min-h-11 items-center transition-colors hover:text-orange-600">
+              {c.label}
+            </a>
+          ) : (
+            <span aria-current="page" class="text-ink-900 inline-flex min-h-11 items-center">
+              {c.label}
+            </span>
+          )}
+        </li>
+      ))
+    }
+  </ol>
+</nav>

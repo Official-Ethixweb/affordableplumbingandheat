@@ -90,7 +90,7 @@ export function A11yStepper({
           aria-label={`Decrease ${label.toLowerCase()}`}
           disabled={!canDecrease}
           onClick={onDecrease}
-          className="border-ink-100 text-ink-800 inline-flex items-center justify-center gap-1 rounded-lg border py-1.5 text-xs font-semibold transition-colors hover:border-orange-400 hover:text-orange-600 disabled:pointer-events-none disabled:opacity-40"
+          className="border-ink-100 text-ink-800 inline-flex min-h-11 items-center justify-center gap-1 rounded-lg border py-1.5 text-xs font-semibold transition-colors hover:border-orange-400 hover:text-orange-600 disabled:pointer-events-none disabled:opacity-40"
         >
           <Minus className="h-3.5 w-3.5" />
         </button>
@@ -98,7 +98,7 @@ export function A11yStepper({
           type="button"
           aria-label={`Reset ${label.toLowerCase()}`}
           onClick={onReset}
-          className="border-ink-100 text-ink-500 inline-flex items-center justify-center gap-1 rounded-lg border py-1.5 text-xs font-semibold transition-colors hover:border-orange-400 hover:text-orange-600"
+          className="border-ink-100 text-ink-500 inline-flex min-h-11 items-center justify-center gap-1 rounded-lg border py-1.5 text-xs font-semibold transition-colors hover:border-orange-400 hover:text-orange-600"
         >
           <RotateCcw className="h-3.5 w-3.5" />
         </button>
@@ -107,7 +107,7 @@ export function A11yStepper({
           aria-label={`Increase ${label.toLowerCase()}`}
           disabled={!canIncrease}
           onClick={onIncrease}
-          className="border-ink-100 text-ink-800 inline-flex items-center justify-center gap-1 rounded-lg border py-1.5 text-xs font-semibold transition-colors hover:border-orange-400 hover:text-orange-600 disabled:pointer-events-none disabled:opacity-40"
+          className="border-ink-100 text-ink-800 inline-flex min-h-11 items-center justify-center gap-1 rounded-lg border py-1.5 text-xs font-semibold transition-colors hover:border-orange-400 hover:text-orange-600 disabled:pointer-events-none disabled:opacity-40"
         >
           <Plus className="h-3.5 w-3.5" />
         </button>
@@ -154,7 +154,7 @@ export function A11ySlider({
         step={step}
         value={value}
         onChange={(e) => onChange(Number(e.target.value))}
-        className="bg-ink-200 mt-2.5 h-1.5 w-full cursor-pointer appearance-none rounded-full accent-orange-600"
+        className="a11y-slider mt-0.5"
       />
     </div>
   );
@@ -192,7 +192,7 @@ export function A11yButtonGroup<T extends string>({
             aria-label={opt.label}
             title={opt.label}
             onClick={() => onChange(opt.value)}
-            className={`inline-flex items-center justify-center rounded-lg border py-1.5 transition-colors ${
+            className={`inline-flex min-h-11 items-center justify-center rounded-lg border py-1.5 transition-colors ${
               value === opt.value
                 ? 'border-orange-500 bg-orange-50 text-orange-600'
                 : 'border-ink-100 text-ink-500 hover:border-ink-200'
@@ -237,7 +237,7 @@ export function A11ySelect({
           value={value}
           disabled={disabled}
           onChange={(e) => onChange(e.target.value)}
-          className="border-ink-100 bg-ink-50 text-ink-800 w-full appearance-none rounded-lg border py-1.5 pr-8 pl-2.5 text-xs font-medium disabled:opacity-50"
+          className="border-ink-100 bg-ink-50 text-ink-800 min-h-11 w-full appearance-none rounded-lg border py-1.5 pr-8 pl-2.5 text-xs font-medium disabled:opacity-50"
         >
           {options.map((opt) => (
             <option key={opt.value} value={opt.value}>

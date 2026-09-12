@@ -52,7 +52,7 @@ const {
             open={i === 0}
             class="card-elevated group open:border-orange-300/60 px-6 py-5 sm:px-7 sm:py-6"
           >
-            <summary class="font-display text-ink-900 flex cursor-pointer list-none items-center justify-between gap-4 text-base font-bold sm:text-lg [&::-webkit-details-marker]:hidden">
+            <summary class="font-display text-ink-900 flex min-h-11 cursor-pointer list-none items-center justify-between gap-4 text-base font-bold sm:text-lg [&::-webkit-details-marker]:hidden">
               {item.question}
               <span class="bg-ink-50 flex size-8 shrink-0 items-center justify-center rounded-full transition-colors group-open:bg-orange-600/15">
                 <Plus className="size-4 shrink-0 text-orange-600 transition-transform duration-300 group-open:rotate-45" aria-hidden="true" />
@@ -65,3 +65,23 @@ const {
     </Reveal>
   </Container>
 </section>
+
+<script>
+  // `<details name>` gives an exclusive accordion natively, but only from
+  // Safari 17.2 (and Firefox 130). On older builds the attribute is ignored
+  // and every panel a visitor opens stays open, so the list grows into a wall
+  // of text. Feature-detected, so browsers with native support never run this.
+  const supportsExclusive = 'name' in HTMLDetailsElement.prototype;
+
+  if (!supportsExclusive) {
+    document.querySelectorAll<HTMLDetailsElement>('details[name]').forEach((el) => {
+      el.addEventListener('toggle', () => {
+        if (!el.open) return;
+        const group = el.getAttribute('name');
+        document.querySelectorAll<HTMLDetailsElement>(`details[name="${group}"]`).forEach((other) => {
+          if (other !== el) other.open = false;
+        });
+      });
+    });
+  }
+</script>

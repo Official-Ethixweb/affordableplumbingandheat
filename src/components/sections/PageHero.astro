@@ -1,15 +1,11 @@
 ---
 import { Image } from 'astro:assets';
-import { ChevronRight } from 'lucide-react';
 import Container from '../ui/Container.astro';
+import Breadcrumbs from '../ui/Breadcrumbs.astro';
 import IconBadge from '../ui/IconBadge.astro';
 import type { ImageMetadata } from 'astro';
 import type { LucideIcon } from 'lucide-react';
-
-interface Crumb {
-  label: string;
-  href?: string;
-}
+import type { Crumb } from '../ui/Breadcrumbs.astro';
 
 interface Props {
   title: string;
@@ -34,26 +30,7 @@ const imageHeight = large ? 416 : 320;
 
   <Container class="relative grid items-center gap-10 py-16 sm:py-20 lg:grid-cols-[1.3fr_1fr] lg:py-24">
     <div>
-      <nav aria-label="Breadcrumb">
-        <ol class="text-ink-500 flex flex-wrap items-center gap-1.5 text-xs font-medium">
-          {
-            crumbs.map((c, i) => (
-              <li class="flex items-center gap-1.5">
-                {i > 0 && <ChevronRight className="size-3.5 text-ink-300" aria-hidden="true" />}
-                {c.href ? (
-                  <a href={c.href} class="transition-colors hover:text-orange-600">
-                    {c.label}
-                  </a>
-                ) : (
-                  <span aria-current="page" class="text-ink-900">
-                    {c.label}
-                  </span>
-                )}
-              </li>
-            ))
-          }
-        </ol>
-      </nav>
+      <Breadcrumbs crumbs={crumbs} />
       <h1 class="font-display text-ink-900 mt-4 text-4xl leading-[1.03] font-extrabold tracking-[-0.02em] text-balance sm:text-5xl">
         {title}
       </h1>
@@ -79,8 +56,29 @@ const imageHeight = large ? 416 : 320;
         FallbackIcon && (
           <div class="relative hidden lg:flex lg:justify-end" data-reveal="right">
             <div class="absolute -inset-4 -z-10 rounded-[2rem] bg-gradient-to-br from-orange-500/15 to-navy-500/10 blur-2xl" aria-hidden="true" />
-            <div class:list={['shadow-card-hover bg-navy-900 flex aspect-[4/3] w-full items-center justify-center rounded-[2rem]', large ? 'max-w-[546px]' : 'max-w-[420px]']}>
-              <IconBadge icon={FallbackIcon} tone="white" size="lg" class="!size-24 [&>svg]:!size-12" />
+            {/* 24 of the 42 services have no photograph, so this tile is what
+                a visitor sees on more than half of them. A flat navy box with
+                one small glyph read as a missing image; the gradient, the
+                oversized watermark and the ring make it read as a deliberate
+                treatment instead. Matches the photo branch's aspect and width
+                so the two never change the page's rhythm. */}
+            <div
+              class:list={[
+                'shadow-card-hover from-navy-800 to-navy-950 relative flex aspect-[4/3] w-full items-center justify-center overflow-hidden rounded-[2rem] bg-gradient-to-br ring-1 ring-white/10 ring-inset',
+                large ? 'max-w-[546px]' : 'max-w-[420px]'
+              ]}
+            >
+              <div
+                class="pointer-events-none absolute -top-10 -left-10 size-64 rounded-full bg-orange-500/20 blur-3xl"
+                aria-hidden="true"
+              >
+              </div>
+              <FallbackIcon
+                className="pointer-events-none absolute -right-8 -bottom-10 size-64 text-white/[0.06]"
+                aria-hidden="true"
+                strokeWidth={1}
+              />
+              <IconBadge icon={FallbackIcon} tone="white" size="lg" class="relative !size-24 [&>svg]:!size-12" />
             </div>
           </div>
         )

@@ -103,7 +103,10 @@ const badges = [
         </Button>
       </div>
 
-      <ul class="mt-8 flex flex-wrap gap-x-8 gap-y-3">
+      {/* pb-16 below lg: the accessibility and chat launchers float at
+          bottom-24, right on top of this row on a phone. The padding lets the
+          badges sit above the launcher band instead of behind it. */}
+      <ul class="mt-8 flex flex-wrap gap-x-8 gap-y-3 pb-16 lg:pb-0">
         {
           badges.map(({ icon: Icon, label }) => (
             <li class="flex items-center gap-2 text-sm font-semibold text-white/85">

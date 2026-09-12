@@ -18,6 +18,16 @@ function collectReadableBlocks(): HTMLElement[] {
 
 export function useReadAloud(settings: A11ySettings, announce: (message: string) => void) {
   const [supported] = useState(() => typeof window !== 'undefined' && 'speechSynthesis' in window);
+  /* WebKit on iOS/iPadOS accepts `utterance.volume` and then ignores it -
+     speech always plays at the device volume. Exposing that here lets the
+     panel hide a slider that would otherwise look broken: the visitor drags
+     it to 20% and nothing gets quieter. Detected by engine rather than UA
+     string family, since every iOS browser is WebKit underneath. */
+  const [volumeSupported] = useState(() => {
+    if (typeof navigator === 'undefined') return true;
+    const touchMac = navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1;
+    return !(/iPad|iPhone|iPod/.test(navigator.platform) || touchMac);
+  });
   const [status, setStatus] = useState<ReadAloudStatus>('idle');
   const [mode, setMode] = useState<ReadAloudMode>(null);
   const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
@@ -37,8 +47,30 @@ export function useReadAloud(settings: A11ySettings, announce: (message: string)
       setVoices(window.speechSynthesis.getVoices());
     }
     loadVoices();
+    /* iOS Safari populates the voice list lazily and fires `voiceschanged`
+       inconsistently - often not until after the first user gesture - so a
+       one-shot read at mount leaves the Voice picker permanently empty there.
+       Re-read on the first interaction, and poll briefly as a backstop for
+       the engines that never fire the event at all. */
+    const onFirstGesture = () => loadVoices();
+    window.addEventListener('pointerdown', onFirstGesture, { once: true });
+    window.addEventListener('keydown', onFirstGesture, { once: true });
+    let tries = 0;
+    const poll = window.setInterval(() => {
+      if (window.speechSynthesis.getVoices().length > 0 || ++tries > 10) {
+        window.clearInterval(poll);
+        loadVoices();
+        return;
+      }
+      loadVoices();
+    }, 250);
     window.speechSynthesis.addEventListener('voiceschanged', loadVoices);
-    return () => window.speechSynthesis.removeEventListener('voiceschanged', loadVoices);
+    return () => {
+      window.speechSynthesis.removeEventListener('voiceschanged', loadVoices);
+      window.removeEventListener('pointerdown', onFirstGesture);
+      window.removeEventListener('keydown', onFirstGesture);
+      window.clearInterval(poll);
+    };
   }, [supported]);
 
   const clearHighlight = useCallback(() => {
@@ -186,5 +218,5 @@ export function useReadAloud(settings: A11ySettings, announce: (message: string)
     };
   }, [supported, clearHighlight]);
 
-  return { supported, status, mode, voices, readPage, readSelection, pause, resume, stop, next, prev };
+  return { supported, volumeSupported, status, mode, voices, readPage, readSelection, pause, resume, stop, next, prev };
 }

@@ -12,11 +12,34 @@ const categories: ServiceCategory[] = ['plumbing', 'hvac', 'electrical', 'sewer'
 
 const navLinks = [
   { label: 'Service Area', href: '/service-area/' },
+  { label: 'About Us', href: '/about-us/' },
   { label: 'Blog', href: '/blog/' },
   { label: 'Coupons', href: '/coupons/' },
   { label: 'Financing', href: '/financing/' },
   { label: 'Contact Us', href: '/contact-us/' }
 ];
+
+/** Destinations the service-category lists don't cover. The mobile dialog
+ * renders these above the category lists so a phone visitor can still reach
+ * Home, the services index and Careers - none of which appear anywhere else
+ * in that menu. */
+const mobileTopLinks = [
+  { label: 'Home', href: '/' },
+  { label: 'All Services', href: '/services/' }
+];
+const mobileExtraLinks = [{ label: 'Careers', href: '/careers/' }];
+
+/** Nothing marked the current page before: no `aria-current`, no highlight.
+ * Compared with a trailing slash on both sides so `/blog` and `/blog/` match,
+ * and the section (not just the exact page) lights up - a visitor reading
+ * /services/ac-repair-colorado-springs/ is still "in" Services. Home is the
+ * exception: every path starts with "/", so it only matches exactly. */
+const currentPath = Astro.url.pathname.replace(/\/?$/, '/');
+function isCurrent(href: string) {
+  const target = href.replace(/\/?$/, '/');
+  return target === '/' ? currentPath === '/' : currentPath.startsWith(target);
+}
+const servicesSectionActive = currentPath.startsWith('/services/');
 ---
 
 <header id="site-header" class="fixed inset-x-0 top-0 z-50">
@@ -27,7 +50,10 @@ const navLinks = [
         <Clock className="size-3.5 text-orange-400" aria-hidden="true" />
         {business.hoursShort} - Licensed &amp; Insured
       </p>
-      <a href={`tel:${business.hotline.tel}`} class="font-semibold text-white/90 transition-colors hover:text-orange-400">
+      <a
+        href={`tel:${business.hotline.tel}`}
+        class="inline-flex min-h-11 items-center font-semibold text-white/90 transition-colors hover:text-orange-400"
+      >
         {business.hotline.display}
       </a>
     </Container>
@@ -55,7 +81,10 @@ const navLinks = [
       <nav aria-label="Primary" class="hidden shrink-0 items-center lg:flex xl:gap-1">
         <details class="group relative shrink-0">
           <summary
-            class="font-display flex shrink-0 cursor-pointer list-none items-center gap-1 rounded-full px-3 py-2.5 text-sm font-semibold whitespace-nowrap text-white/90 transition-colors hover:bg-white/5 hover:text-orange-300 xl:px-4 xl:text-[15px] [&::-webkit-details-marker]:hidden"
+            class:list={[
+              'font-display flex shrink-0 cursor-pointer list-none items-center gap-1 rounded-full px-3 py-2.5 text-sm font-semibold whitespace-nowrap transition-colors hover:bg-white/5 hover:text-orange-300 xl:px-4 xl:text-[15px] [&::-webkit-details-marker]:hidden',
+              servicesSectionActive ? 'bg-white/10 text-orange-300' : 'text-white/90'
+            ]}
           >
             Services
             <ChevronDown
@@ -86,7 +115,11 @@ const navLinks = [
                         .map((s) => (
                           <a
                             href={`/services/${s.slug}/`}
-                            class="hover:bg-ink-50 rounded-xl px-2 py-1.5 text-[13px] leading-snug font-medium text-ink-700 transition-colors"
+                            aria-current={isCurrent(`/services/${s.slug}/`) ? 'page' : undefined}
+                            class:list={[
+                              'hover:bg-ink-50 rounded-xl px-2 py-1.5 text-[13px] leading-snug font-medium transition-colors',
+                              isCurrent(`/services/${s.slug}/`) ? 'bg-orange-50 text-orange-700' : 'text-ink-700'
+                            ]}
                           >
                             {s.title}
                           </a>
@@ -109,7 +142,11 @@ const navLinks = [
           navLinks.map((link) => (
             <a
               href={link.href}
-              class="font-display shrink-0 rounded-full px-3 py-2.5 text-sm font-semibold whitespace-nowrap text-white/90 transition-colors hover:bg-white/5 hover:text-orange-300 xl:px-4 xl:text-[15px]"
+              aria-current={isCurrent(link.href) ? 'page' : undefined}
+              class:list={[
+                'font-display shrink-0 rounded-full px-3 py-2.5 text-sm font-semibold whitespace-nowrap transition-colors hover:bg-white/5 hover:text-orange-300 xl:px-4 xl:text-[15px]',
+                isCurrent(link.href) ? 'bg-white/10 text-orange-300' : 'text-white/90'
+              ]}
             >
               {link.label}
             </a>
@@ -123,7 +160,7 @@ const navLinks = [
         </div>
         <a
           href={`tel:${business.hotline.tel}`}
-          class="font-display hidden items-center gap-2 rounded-full border border-white/15 px-4 py-2.5 text-sm font-bold whitespace-nowrap text-white transition-colors hover:border-orange-400/50 hover:text-orange-300 md:flex lg:hidden xl:flex"
+          class="font-display hidden min-h-11 items-center gap-2 rounded-full border border-white/15 px-4 py-2.5 text-sm font-bold whitespace-nowrap text-white transition-colors hover:border-orange-400/50 hover:text-orange-300 md:flex lg:hidden xl:flex"
         >
           <Phone className="size-4 text-orange-400" aria-hidden="true" />
           {business.hotline.display}
@@ -145,10 +182,14 @@ const navLinks = [
 </header>
 
 <!-- Mobile menu -->
+<!-- h-svh, not h-dvh: `dvh` tracks iOS Safari's collapsing toolbar, so the
+     panel resized under the reader's thumb mid-scroll. `svh` is the smallest
+     viewport height, which never changes; the backdrop covers the strip the
+     toolbar leaves behind when it retracts. -->
 <dialog
   id="mobile-menu"
   aria-label="Mobile menu"
-  class="m-0 h-dvh max-h-none w-full max-w-none border-0 bg-navy-900 p-0 backdrop:bg-black/60 backdrop:backdrop-blur-sm open:flex open:flex-col"
+  class="m-0 h-svh max-h-none w-full max-w-none border-0 bg-navy-900 p-0 backdrop:bg-black/60 backdrop:backdrop-blur-sm open:flex open:flex-col"
 >
   <div class="flex h-16 items-center justify-between border-b border-white/10 px-5">
     <Image src={logo} alt={business.name} width={170} height={71} densities={[1, 2]} quality={82} class="h-9 w-auto" />
@@ -182,6 +223,25 @@ const navLinks = [
       Accessibility
     </button>
 
+    <ul class="mb-4 space-y-1">
+      {
+        mobileTopLinks.map((link) => (
+          <li>
+            <a
+              href={link.href}
+              aria-current={isCurrent(link.href) ? 'page' : undefined}
+              class:list={[
+                'font-display flex min-h-11 items-center rounded-xl px-3 py-3 text-base font-semibold hover:bg-white/5',
+                isCurrent(link.href) ? 'bg-white/10 text-orange-300' : 'text-white'
+              ]}
+            >
+              {link.label}
+            </a>
+          </li>
+        ))
+      }
+    </ul>
+
     {
       categories.map((cat) => (
         <div class="mb-4">
@@ -195,7 +255,11 @@ const navLinks = [
                 <li>
                   <a
                     href={`/services/${s.slug}/`}
-                    class="block rounded-xl px-3 py-2 text-sm font-medium text-white/85 hover:bg-white/5"
+                    aria-current={isCurrent(`/services/${s.slug}/`) ? 'page' : undefined}
+                    class:list={[
+                      'flex min-h-11 items-center rounded-xl px-3 py-3 text-sm font-medium hover:bg-white/5',
+                      isCurrent(`/services/${s.slug}/`) ? 'bg-white/10 text-orange-300' : 'text-white/85'
+                    ]}
                   >
                     {s.title}
                   </a>
@@ -208,11 +272,15 @@ const navLinks = [
     <div class="my-4 h-px bg-white/10"></div>
     <ul class="space-y-1">
       {
-        navLinks.map((link) => (
+        [...navLinks, ...mobileExtraLinks].map((link) => (
           <li>
             <a
               href={link.href}
-              class="font-display block rounded-xl px-3 py-3 text-base font-semibold text-white hover:bg-white/5"
+              aria-current={isCurrent(link.href) ? 'page' : undefined}
+              class:list={[
+                'font-display flex min-h-11 items-center rounded-xl px-3 py-3 text-base font-semibold hover:bg-white/5',
+                isCurrent(link.href) ? 'bg-white/10 text-orange-300' : 'text-white'
+              ]}
             >
               {link.label}
             </a>
@@ -246,18 +314,37 @@ const navLinks = [
   document.addEventListener('scroll', onScroll, { passive: true });
   onScroll();
 
-  openBtn?.addEventListener('click', () => menu?.showModal());
-  closeBtn?.addEventListener('click', () => menu?.close());
-  menu?.addEventListener('click', (e) => {
-    if (e.target === menu) menu.close();
-  });
-  menu?.querySelectorAll('a').forEach((a) => a.addEventListener('click', () => menu.close()));
-  couponsTrigger?.addEventListener('click', () => {
+  // `aria-expanded` has to be maintained by hand: the trigger is a plain
+  // button pointing at a <dialog>, so nothing updates it for us. Every close
+  // path goes through closeMenu() rather than relying on the dialog's `close`
+  // event alone - Escape and backdrop dismissal are the only routes that
+  // can't call it directly, and the listener below covers those.
+  const setExpanded = (value: boolean) => openBtn?.setAttribute('aria-expanded', String(value));
+  const openMenu = () => {
+    menu?.showModal();
+    setExpanded(true);
+  };
+  const closeMenu = () => {
     menu?.close();
+    setExpanded(false);
+  };
+
+  setExpanded(false);
+  menu?.addEventListener('close', () => setExpanded(false));
+  menu?.addEventListener('cancel', () => setExpanded(false));
+
+  openBtn?.addEventListener('click', openMenu);
+  closeBtn?.addEventListener('click', closeMenu);
+  menu?.addEventListener('click', (e) => {
+    if (e.target === menu) closeMenu();
+  });
+  menu?.querySelectorAll('a').forEach((a) => a.addEventListener('click', closeMenu));
+  couponsTrigger?.addEventListener('click', () => {
+    closeMenu();
     window.dispatchEvent(new CustomEvent('open-coupon-widget'));
   });
   a11yTrigger?.addEventListener('click', () => {
-    menu?.close();
+    closeMenu();
     window.dispatchEvent(new CustomEvent('open-a11y-panel'));
   });
 

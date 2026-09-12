@@ -1,6 +1,7 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import Container from '../../components/ui/Container.astro';
+import Breadcrumbs from '../../components/ui/Breadcrumbs.astro';
 import { business } from '../../data/business';
 import { buildBreadcrumbSchema } from '../../lib/schema';
 
@@ -17,6 +18,7 @@ const breadcrumbSchema = buildBreadcrumbSchema([
 >
   <section class="bg-white py-20 sm:py-28">
     <Container class="mx-auto max-w-3xl">
+      <Breadcrumbs crumbs={[{ label: 'Home', href: '/' }, { label: 'Accessibility' }]} class="mb-3" />
       <p class="font-display text-xs font-bold tracking-wider text-orange-600 uppercase">Accessibility</p>
       <h1 class="font-display text-ink-900 mt-3 text-4xl font-bold">Accessibility Statement</h1>
 

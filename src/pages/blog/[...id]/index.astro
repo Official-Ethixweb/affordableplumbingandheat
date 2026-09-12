@@ -2,8 +2,9 @@
 import { getCollection, render } from 'astro:content';
 import BaseLayout from '../../../layouts/BaseLayout.astro';
 import Container from '../../../components/ui/Container.astro';
+import Breadcrumbs from '../../../components/ui/Breadcrumbs.astro';
 import ContactCTA from '../../../components/sections/ContactCTA.astro';
-import { CalendarDays, ChevronRight, ArrowRight } from 'lucide-react';
+import { CalendarDays, ArrowRight } from 'lucide-react';
 import { business } from '../../../data/business';
 import { buildBreadcrumbSchema } from '../../../lib/schema';
 
@@ -51,21 +52,9 @@ function formatDate(d: Date) {
 >
   <section class="bg-white py-16 sm:py-20">
     <Container class="mx-auto max-w-3xl">
-      <nav aria-label="Breadcrumb">
-        <ol class="text-ink-500 flex flex-wrap items-center gap-1.5 text-xs font-medium">
-          <li class="flex items-center gap-1.5">
-            <a href="/" class="hover:text-orange-600">Home</a>
-          </li>
-          <li class="flex items-center gap-1.5">
-            <ChevronRight className="size-3.5 text-ink-300" aria-hidden="true" />
-            <a href="/blog/" class="hover:text-orange-600">Blog</a>
-          </li>
-          <li class="flex items-center gap-1.5">
-            <ChevronRight className="size-3.5 text-ink-300" aria-hidden="true" />
-            <span aria-current="page" class="text-ink-900">{post.data.category}</span>
-          </li>
-        </ol>
-      </nav>
+      <Breadcrumbs
+        crumbs={[{ label: 'Home', href: '/' }, { label: 'Blog', href: '/blog/' }, { label: post.data.category }]}
+      />
 
       <p class="font-display mt-6 text-xs font-bold tracking-wider text-orange-600 uppercase">{post.data.category}</p>
       <h1 class="font-display text-ink-900 mt-2 text-3xl leading-[1.1] font-extrabold text-balance sm:text-4xl">

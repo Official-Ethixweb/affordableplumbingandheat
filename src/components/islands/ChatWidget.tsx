@@ -168,7 +168,7 @@ function ActionButton({ label, onClick, disabled }: { label: string; onClick: ()
       type="button"
       onClick={onClick}
       disabled={disabled}
-      className="border-ink-200 text-ink-800 rounded-xl border bg-white px-2 py-2 text-center text-xs leading-tight font-medium transition-colors hover:border-orange-400 hover:text-orange-600 disabled:cursor-not-allowed disabled:opacity-50"
+      className="border-ink-200 text-ink-800 flex min-h-11 items-center justify-center rounded-xl border bg-white px-2 py-2 text-center text-xs leading-tight font-medium transition-colors hover:border-orange-400 hover:text-orange-600 disabled:cursor-not-allowed disabled:opacity-50"
     >
       {label}
     </button>
@@ -260,6 +260,24 @@ export default function ChatWidget() {
     }, 4500);
     return () => clearTimeout(t);
   }, []);
+
+  // `open` belongs in here: the transcript survives a close, so reopening a
+  // conversation with no new message left the scroller parked at the top and
+  // the newest reply cut off mid-sentence. Jump (not smooth) on reopen, since
+  // there is no motion for the reader to follow from a freshly mounted panel.
+  useEffect(() => {
+    if (!open) return;
+    // The panel mounts through AnimatePresence, so scrollRef is still null on
+    // this tick. A timer rather than requestAnimationFrame: rAF is throttled
+    // to zero in a backgrounded tab, and this has to land whether or not the
+    // browser is painting frames. Instant, not smooth - there is no motion
+    // for the reader to follow out of a panel that just appeared.
+    const t = window.setTimeout(() => {
+      const el = scrollRef.current;
+      if (el) el.scrollTop = el.scrollHeight;
+    }, 0);
+    return () => window.clearTimeout(t);
+  }, [open]);
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' });
@@ -642,7 +660,7 @@ export default function ChatWidget() {
                   : 'Type a question…';
 
   return (
-    <div className="fixed right-4 bottom-24 z-40 lg:right-6 lg:bottom-6">
+    <div className={`fixed right-4 bottom-24 lg:right-6 lg:bottom-6 ${open ? 'z-[60]' : 'z-40'}`}>
       <AnimatePresence>
         {open && (
           <motion.div
@@ -653,6 +671,7 @@ export default function ChatWidget() {
             transition={{ duration: 0.22, ease: EASE }}
             className="border-ink-100 mb-4 flex h-[min(600px,72vh)] w-[92vw] max-w-[400px] flex-col overflow-hidden rounded-[1.75rem] border bg-white shadow-2xl shadow-black/15"
             role="dialog"
+            aria-modal="true"
             aria-label={`Chat with ${business.name}`}
           >
             <div className="relative shrink-0 overflow-hidden bg-navy-900 p-5">
@@ -686,7 +705,7 @@ export default function ChatWidget() {
                   type="button"
                   aria-label="Close chat"
                   onClick={() => setOpen(false)}
-                  className="grid h-8 w-8 place-items-center rounded-full text-white/80 transition-colors hover:bg-white/10 hover:text-white"
+                  className="grid h-11 w-11 place-items-center rounded-full text-white/80 transition-colors hover:bg-white/10 hover:text-white"
                 >
                   <X className="h-4 w-4" />
                 </button>
@@ -694,13 +713,13 @@ export default function ChatWidget() {
               <div className="relative mt-4 flex flex-wrap gap-2">
                 <a
                   href={`tel:${business.hotline.tel}`}
-                  className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-white/20"
+                  className="inline-flex min-h-11 items-center gap-1.5 rounded-full bg-white/10 px-3.5 py-1.5 text-xs font-medium text-white transition-colors hover:bg-white/20"
                 >
                   <Phone className="h-3 w-3" /> Call
                 </a>
                 <a
                   href={`mailto:${business.email}`}
-                  className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-white/20"
+                  className="inline-flex min-h-11 items-center gap-1.5 rounded-full bg-white/10 px-3.5 py-1.5 text-xs font-medium text-white transition-colors hover:bg-white/20"
                 >
                   <Mail className="h-3 w-3" /> Email
                 </a>
@@ -797,7 +816,7 @@ export default function ChatWidget() {
                 type="submit"
                 aria-label="Send message"
                 disabled={!input.trim()}
-                className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-orange-600 text-white transition-transform active:scale-95 disabled:opacity-40"
+                className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-orange-600 text-white transition-transform active:scale-95 disabled:opacity-40"
               >
                 <Send className="h-4 w-4" />
               </button>

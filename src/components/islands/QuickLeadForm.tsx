@@ -5,6 +5,10 @@ import { Send, CheckCircle2, Phone, Loader2, User, AlertTriangle } from 'lucide-
 import { quickLeadSchema, type QuickLeadValues } from '../../lib/contactSchema';
 import { zodResolver } from '../../lib/zodResolver';
 import { business } from '../../data/business';
+import { Turnstile } from './Turnstile';
+import { PUBLIC_TURNSTILE_SITE_KEY } from 'astro:env/client';
+
+const turnstileRequired = Boolean(PUBLIC_TURNSTILE_SITE_KEY);
 
 /**
  * Short homepage enquiry form: name, phone, service, optional detail.
@@ -31,10 +35,14 @@ const fieldBase =
   'w-full rounded-xl border border-white/15 bg-white/10 px-4 py-3 text-[15px] text-white placeholder:text-white/45 outline-none transition-colors focus:border-orange-400 focus:bg-white/15 focus:ring-4 focus:ring-orange-500/20';
 const errorBase = 'border-red-400/70 focus:border-red-400';
 const labelBase = 'mb-1.5 block text-xs font-semibold tracking-wide text-white/70 uppercase';
+/* Each of these carries role="alert": validation runs in JS on submit, so
+   without a live region a screen-reader user gets no announcement that
+   anything failed - focus just lands back in the form. */
 const errorText = 'mt-1.5 text-xs font-medium text-red-300';
 
 export default function QuickLeadForm() {
   const [status, setStatus] = useState<'idle' | 'sent' | 'error'>('idle');
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
   const {
     register,
     handleSubmit,
@@ -53,12 +61,14 @@ export default function QuickLeadForm() {
           service: data.service,
           message: data.message ?? '',
           urgent: data.service === 'Emergency - Need Help Now',
-          company: data.company ?? ''
+          company: data.company ?? '',
+          turnstileToken
         })
       });
       if (!res.ok) throw new Error('Request failed');
       setStatus('sent');
     } catch {
+      setTurnstileToken(null);
       setStatus('error');
     }
   });
@@ -130,7 +140,7 @@ export default function QuickLeadForm() {
             />
           </div>
           {errors.name && (
-            <p id="quick-name-error" className={errorText}>
+            <p id="quick-name-error" role="alert" className={errorText}>
               {errors.name.message}
             </p>
           )}
@@ -157,7 +167,7 @@ export default function QuickLeadForm() {
             />
           </div>
           {errors.phone && (
-            <p id="quick-phone-error" className={errorText}>
+            <p id="quick-phone-error" role="alert" className={errorText}>
               {errors.phone.message}
             </p>
           )}
@@ -186,7 +196,7 @@ export default function QuickLeadForm() {
           ))}
         </select>
         {errors.service && (
-          <p id="quick-service-error" className={errorText}>
+          <p id="quick-service-error" role="alert" className={errorText}>
             {errors.service.message}
           </p>
         )}
@@ -205,9 +215,11 @@ export default function QuickLeadForm() {
         />
       </div>
 
+      <Turnstile onVerify={setTurnstileToken} onExpire={() => setTurnstileToken(null)} theme="dark" />
+
       <button
         type="submit"
-        disabled={isSubmitting}
+        disabled={isSubmitting || (turnstileRequired && !turnstileToken)}
         className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-orange-600 px-6 py-3.5 text-sm font-bold text-white shadow-lg shadow-orange-900/30 transition-transform hover:bg-orange-500 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
       >
         {isSubmitting ? (

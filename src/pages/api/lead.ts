@@ -2,6 +2,7 @@ import type { APIRoute } from 'astro';
 import { Resend } from 'resend';
 import { leadApiSchema } from '../../lib/contactSchema';
 import { business } from '../../data/business';
+import { verifyTurnstile } from '../../lib/turnstile';
 import { RESEND_API_KEY, LEAD_TO_EMAIL, LEAD_FROM_EMAIL } from 'astro:env/server';
 
 // Server-rendered: everything else on the site is prerendered static HTML,
@@ -76,6 +77,26 @@ export const POST: APIRoute = async ({ request, clientAddress }) => {
       status: 429,
       headers: { 'Content-Type': 'application/json' }
     });
+  }
+
+  // The chatbot is exempt: it's a multi-turn conversational flow with no
+  // natural place for a checkbox widget, and it's already covered by the
+  // honeypot and rate-limit checks above. The contact form and quick-lead
+  // form both still require a verified token.
+  if (lead.source !== 'chatbot') {
+    const turnstile = await verifyTurnstile(lead.turnstileToken, clientAddress);
+    if (!turnstile.ok) {
+      if (turnstile.reason === 'not_configured') {
+        return new Response(
+          JSON.stringify({ error: 'Submissions are temporarily unavailable. Please try again later.' }),
+          { status: 503, headers: { 'Content-Type': 'application/json' } }
+        );
+      }
+      return new Response(JSON.stringify({ error: 'Verification failed. Please try again.' }), {
+        status: 403,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
   }
 
   const subjectPrefix = lead.urgent ? 'URGENT - ' : '';

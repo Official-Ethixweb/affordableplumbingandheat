@@ -258,7 +258,11 @@ export default function AccessibilityWidget() {
         {open ? <X className="h-[19.2px] w-[19.2px]" /> : <Accessibility className="h-[19.2px] w-[19.2px]" />}
       </button>
 
-      <div className="fixed bottom-20 left-3 z-40">
+      {/* z-40 is the tier the chat launcher also sits on, and the launcher is
+          rendered after this one, so at z-40 it painted straight over the
+          bottom-right corner of the open panel. An open panel outranks every
+          floating launcher; closed, it drops back so it never traps clicks. */}
+      <div className={`fixed bottom-20 left-3 ${open ? 'z-[60]' : 'z-40'}`}>
         <AnimatePresence>
           {open && (
             <motion.div
@@ -297,7 +301,7 @@ export default function AccessibilityWidget() {
                       closeA11yPanel();
                       focusA11yTrigger();
                     }}
-                    className="grid h-8 w-8 shrink-0 place-items-center rounded-full text-white/80 transition-colors hover:bg-white/10 hover:text-white"
+                    className="grid h-11 w-11 shrink-0 place-items-center rounded-full text-white/80 transition-colors hover:bg-white/10 hover:text-white"
                   >
                     <X className="h-4 w-4" />
                   </button>
@@ -393,17 +397,19 @@ export default function AccessibilityWidget() {
                           displayValue={`${settings.readAloudRate.toFixed(1)}x`}
                           onChange={(v) => update('readAloudRate', v)}
                         />
-                        <A11ySlider
-                          icon={Volume2}
-                          label="Volume"
-                          tooltip="Adjust the read-aloud volume"
-                          min={READ_VOLUME_MIN}
-                          max={READ_VOLUME_MAX}
-                          step={READ_VOLUME_STEP}
-                          value={settings.readAloudVolume}
-                          displayValue={`${Math.round(settings.readAloudVolume * 100)}%`}
-                          onChange={(v) => update('readAloudVolume', v)}
-                        />
+                        {readAloud.volumeSupported && (
+                          <A11ySlider
+                            icon={Volume2}
+                            label="Volume"
+                            tooltip="Adjust the read-aloud volume"
+                            min={READ_VOLUME_MIN}
+                            max={READ_VOLUME_MAX}
+                            step={READ_VOLUME_STEP}
+                            value={settings.readAloudVolume}
+                            displayValue={`${Math.round(settings.readAloudVolume * 100)}%`}
+                            onChange={(v) => update('readAloudVolume', v)}
+                          />
+                        )}
                         {readAloud.voices.length > 0 && (
                           <A11ySelect
                             icon={AudioLines}
